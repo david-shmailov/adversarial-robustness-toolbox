@@ -33,7 +33,7 @@ from art.config import ART_NUMPY_DTYPE
 from art.attacks.attack import EvasionAttack
 from art.estimators.estimator import BaseEstimator
 from art.estimators.classification import ClassifierMixin
-from art.utils import compute_success, to_categorical, check_and_transform_label_format, get_labels_np_array
+from art.utils import compute_success, to_categorical, check_and_transform_label_format
 
 if TYPE_CHECKING:
     from art.utils import CLASSIFIER_TYPE
@@ -63,16 +63,18 @@ class HopSkipJump(EvasionAttack):
     _estimator_requirements = (BaseEstimator, ClassifierMixin)
 
     def __init__(
-        self,
-        classifier: "CLASSIFIER_TYPE",
-        batch_size: int = 64,
-        targeted: bool = False,
-        norm: Union[int, float, str] = 2,
-        max_iter: int = 50,
-        max_eval: int = 10000,
-        init_eval: int = 100,
-        init_size: int = 100,
-        verbose: bool = True,
+            self,
+            classifier: "CLASSIFIER_TYPE",
+            batch_size: int = 64,
+            targeted: bool = False,
+            norm: Union[int, float, str] = 2,
+            max_iter: int = 50,
+            max_eval: int = 10000,
+            init_eval: int = 100,
+            init_size: int = 100,
+            verbose: bool = True,
+            log_file: str = None,
+
     ) -> None:
         """
         Create a HopSkipJump attack instance.
@@ -88,6 +90,10 @@ class HopSkipJump(EvasionAttack):
         :param verbose: Show progress bars.
         """
         super().__init__(estimator=classifier)
+        self.inquiries_list = []
+        self.pert_list = []
+        self.log_file = log_file
+        self.current_inquiry_counter = 0
         self._targeted = targeted
         self.norm = norm
         self.max_iter = max_iter
@@ -107,6 +113,7 @@ class HopSkipJump(EvasionAttack):
             self.theta = 0.01 / np.prod(self.estimator.input_shape)
 
     def generate(self, x: np.ndarray, y: Optional[np.ndarray] = None, **kwargs) -> np.ndarray:
+
         """
         Generate adversarial samples and return them in an array.
 
@@ -123,19 +130,12 @@ class HopSkipJump(EvasionAttack):
         :type resume: `bool`
         :return: An array holding the adversarial examples.
         """
+
         mask = kwargs.get("mask")
-
-        if y is None:
-            # Throw error if attack is targeted, but no targets are provided
-            if self.targeted:  # pragma: no cover
-                raise ValueError("Target labels `y` need to be provided for a targeted attack.")
-
-            # Use model predictions as correct outputs
-            y = get_labels_np_array(self.estimator.predict(x, batch_size=self.batch_size))  # type: ignore
 
         y = check_and_transform_label_format(y, self.estimator.nb_classes)
 
-        if self.estimator.nb_classes == 2 and y.shape[1] == 1:  # pragma: no cover
+        if y is not None and self.estimator.nb_classes == 2 and y.shape[1] == 1:  # pragma: no cover
             raise ValueError(
                 "This attack has not yet been tested for binary classification with a single output classifier."
             )
@@ -189,7 +189,8 @@ class HopSkipJump(EvasionAttack):
         # Some initial setups
         x_adv = x.astype(ART_NUMPY_DTYPE)
 
-        y = np.argmax(y, axis=1)
+        if y is not None:
+            y = np.argmax(y, axis=1)
 
         # Generate the adversarial samples
         for ind, val in enumerate(tqdm(x_adv, desc="HopSkipJump", disable=not self.verbose)):
@@ -198,7 +199,7 @@ class HopSkipJump(EvasionAttack):
             if self.targeted:
                 x_adv[ind] = self._perturb(
                     x=val,
-                    y=y[ind],  # type: ignore
+                    y=y[ind],
                     y_p=preds[ind],
                     init_pred=init_preds[ind],
                     adv_init=x_adv_init[ind],
@@ -219,25 +220,42 @@ class HopSkipJump(EvasionAttack):
                     clip_max=clip_max,
                 )
 
-        y = to_categorical(y, self.estimator.nb_classes)  # type: ignore
+            # L2 norm distance of error:
+            perturbation = np.linalg.norm(val - x_adv[ind])
+            # todo counter for inquires :
+
+            self.pert_list.append(perturbation)
+            self.inquiries_list.append(self.current_inquiry_counter)
+
+            # reset:
+            self.current_inquiry_counter = 0
+
+        if y is not None:
+            y = to_categorical(y, self.estimator.nb_classes)
 
         logger.info(
             "Success rate of HopSkipJump attack: %.2f%%",
             100 * compute_success(self.estimator, x, y, x_adv, self.targeted, batch_size=self.batch_size),
         )
 
+        # todo add writing to log file
+        with open(self.log_file, 'w') as log:
+            log.write("image_number:\t num of inquiries:\t perturbation norm: \n")
+            for ind, result in enumerate(self.inquiries_list):
+                log.write("\t\t{ind} \t\t {inquiries} \t\t {pert}\n"
+                          .format(ind=ind, inquiries=result, pert=self.pert_list[ind]))
         return x_adv
 
     def _perturb(
-        self,
-        x: np.ndarray,
-        y: int,
-        y_p: int,
-        init_pred: int,
-        adv_init: np.ndarray,
-        mask: Optional[np.ndarray],
-        clip_min: float,
-        clip_max: float,
+            self,
+            x: np.ndarray,
+            y: int,
+            y_p: int,
+            init_pred: int,
+            adv_init: np.ndarray,
+            mask: Optional[np.ndarray],
+            clip_min: float,
+            clip_max: float,
     ) -> np.ndarray:
         """
         Internal attack function for one example.
@@ -267,15 +285,15 @@ class HopSkipJump(EvasionAttack):
         return x_adv
 
     def _init_sample(
-        self,
-        x: np.ndarray,
-        y: int,
-        y_p: int,
-        init_pred: int,
-        adv_init: np.ndarray,
-        mask: Optional[np.ndarray],
-        clip_min: float,
-        clip_max: float,
+            self,
+            x: np.ndarray,
+            y: int,
+            y_p: int,
+            init_pred: int,
+            adv_init: np.ndarray,
+            mask: Optional[np.ndarray],
+            clip_min: float,
+            clip_max: float,
     ) -> Optional[Union[np.ndarray, Tuple[np.ndarray, int]]]:
         """
         Find initial adversarial example for the attack.
@@ -372,13 +390,13 @@ class HopSkipJump(EvasionAttack):
         return initial_sample
 
     def _attack(
-        self,
-        initial_sample: np.ndarray,
-        original_sample: np.ndarray,
-        target: int,
-        mask: Optional[np.ndarray],
-        clip_min: float,
-        clip_max: float,
+            self,
+            initial_sample: np.ndarray,
+            original_sample: np.ndarray,
+            target: int,
+            mask: Optional[np.ndarray],
+            clip_min: float,
+            clip_max: float,
     ) -> np.ndarray:
         """
         Main function for the boundary attack.
@@ -441,7 +459,7 @@ class HopSkipJump(EvasionAttack):
             while not success:
                 epsilon /= 2.0
                 potential_sample = current_sample + epsilon * update
-                success = self._adversarial_satisfactory(  # type: ignore
+                success = self._adversarial_satisfactory(
                     samples=potential_sample[None],
                     target=target,
                     clip_min=clip_min,
@@ -462,14 +480,14 @@ class HopSkipJump(EvasionAttack):
         return current_sample
 
     def _binary_search(
-        self,
-        current_sample: np.ndarray,
-        original_sample: np.ndarray,
-        target: int,
-        norm: Union[int, float, str],
-        clip_min: float,
-        clip_max: float,
-        threshold: Optional[float] = None,
+            self,
+            current_sample: np.ndarray,
+            original_sample: np.ndarray,
+            target: int,
+            norm: Union[int, float, str],
+            clip_min: float,
+            clip_max: float,
+            threshold: Optional[float] = None,
     ) -> np.ndarray:
         """
         Binary search to approach the boundary.
@@ -498,7 +516,6 @@ class HopSkipJump(EvasionAttack):
 
             if threshold is None:
                 threshold = np.minimum(upper_bound * self.theta, self.theta)
-
         # Then start the binary search
         while (upper_bound - lower_bound) > threshold:
             # Interpolation point
@@ -509,7 +526,6 @@ class HopSkipJump(EvasionAttack):
                 alpha=alpha,
                 norm=norm,
             )
-
             # Update upper_bound and lower_bound
             satisfied = self._adversarial_satisfactory(
                 samples=interpolated_sample[None],
@@ -530,11 +546,11 @@ class HopSkipJump(EvasionAttack):
         return result
 
     def _compute_delta(
-        self,
-        current_sample: np.ndarray,
-        original_sample: np.ndarray,
-        clip_min: float,
-        clip_max: float,
+            self,
+            current_sample: np.ndarray,
+            original_sample: np.ndarray,
+            clip_min: float,
+            clip_max: float,
     ) -> float:
         """
         Compute the delta parameter.
@@ -560,14 +576,14 @@ class HopSkipJump(EvasionAttack):
         return delta
 
     def _compute_update(
-        self,
-        current_sample: np.ndarray,
-        num_eval: int,
-        delta: float,
-        target: int,
-        mask: Optional[np.ndarray],
-        clip_min: float,
-        clip_max: float,
+            self,
+            current_sample: np.ndarray,
+            num_eval: int,
+            delta: float,
+            target: int,
+            mask: Optional[np.ndarray],
+            clip_min: float,
+            clip_max: float,
     ) -> np.ndarray:
         """
         Compute the update in Eq.(14).
@@ -630,7 +646,7 @@ class HopSkipJump(EvasionAttack):
         return result
 
     def _adversarial_satisfactory(
-        self, samples: np.ndarray, target: int, clip_min: float, clip_max: float
+            self, samples: np.ndarray, target: int, clip_min: float, clip_max: float
     ) -> np.ndarray:
         """
         Check whether an image is adversarial.
@@ -648,12 +664,12 @@ class HopSkipJump(EvasionAttack):
             result = preds == target
         else:
             result = preds != target
-
+        self.current_inquiry_counter += 1
         return result
 
     @staticmethod
     def _interpolate(
-        current_sample: np.ndarray, original_sample: np.ndarray, alpha: float, norm: Union[int, float, str]
+            current_sample: np.ndarray, original_sample: np.ndarray, alpha: float, norm: Union[int, float, str]
     ) -> np.ndarray:
         """
         Interpolate a new sample based on the original and the current samples.
@@ -676,19 +692,19 @@ class HopSkipJump(EvasionAttack):
         if self.norm not in [2, np.inf, "inf"]:
             raise ValueError('Norm order must be either 2, `np.inf` or "inf".')
 
-        if not isinstance(self.max_iter, int) or self.max_iter < 0:
+        if not isinstance(self.max_iter, (int, np.int)) or self.max_iter < 0:
             raise ValueError("The number of iterations must be a non-negative integer.")
 
-        if not isinstance(self.max_eval, int) or self.max_eval <= 0:
+        if not isinstance(self.max_eval, (int, np.int)) or self.max_eval <= 0:
             raise ValueError("The maximum number of evaluations must be a positive integer.")
 
-        if not isinstance(self.init_eval, int) or self.init_eval <= 0:
+        if not isinstance(self.init_eval, (int, np.int)) or self.init_eval <= 0:
             raise ValueError("The initial number of evaluations must be a positive integer.")
 
         if self.init_eval > self.max_eval:
             raise ValueError("The maximum number of evaluations must be larger than the initial number of evaluations.")
 
-        if not isinstance(self.init_size, int) or self.init_size <= 0:
+        if not isinstance(self.init_size, (int, np.int)) or self.init_size <= 0:
             raise ValueError("The number of initial trials must be a positive integer.")
 
         if not isinstance(self.verbose, bool):
