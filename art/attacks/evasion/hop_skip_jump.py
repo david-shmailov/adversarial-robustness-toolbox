@@ -33,7 +33,7 @@ from art.config import ART_NUMPY_DTYPE
 from art.attacks.attack import EvasionAttack
 from art.estimators.estimator import BaseEstimator
 from art.estimators.classification import ClassifierMixin
-from art.utils import compute_success, to_categorical, check_and_transform_label_format
+from art.utils import compute_success, to_categorical, check_and_transform_label_format, get_labels_np_array
 from scipy.spatial.distance import cdist
 if TYPE_CHECKING:
     from art.utils import CLASSIFIER_TYPE
@@ -133,9 +133,17 @@ class HopSkipJump(EvasionAttack):
 
         mask = kwargs.get("mask")
 
+        if y is None:
+            # Throw error if attack is targeted, but no targets are provided
+            if self.targeted:  # pragma: no cover
+                raise ValueError("Target labels `y` need to be provided for a targeted attack.")
+
+            # Use model predictions as correct outputs
+            y = get_labels_np_array(self.estimator.predict(x, batch_size=self.batch_size))  # type: ignore
+
         y = check_and_transform_label_format(y, self.estimator.nb_classes)
 
-        if y is not None and self.estimator.nb_classes == 2 and y.shape[1] == 1:  # pragma: no cover
+        if self.estimator.nb_classes == 2 and y.shape[1] == 1:  # pragma: no cover
             raise ValueError(
                 "This attack has not yet been tested for binary classification with a single output classifier."
             )
@@ -219,16 +227,16 @@ class HopSkipJump(EvasionAttack):
                     clip_min=clip_min,
                     clip_max=clip_max,
                 )
+            # counter for inquires :
 
-
-            # L2 norm distance of error:
-            # todo counter for inquires :
-
-
-            self.inquiries_list.append(self.current_inquiry_counter)
+            counter = self.current_inquiry_counter
+            self.inquiries_list.append(counter)
 
             # reset:
             self.current_inquiry_counter = 0
+
+            if ind == 3: # todo delete this
+                break
 
         if y is not None:
             y = to_categorical(y, self.estimator.nb_classes)
@@ -666,6 +674,8 @@ class HopSkipJump(EvasionAttack):
         else:
             result = preds != target
         self.current_inquiry_counter += 1
+        if self.current_inquiry_counter > 700:
+            print(str(self.current_inquiry_counter)) # todo delete this!
         return result
 
     @staticmethod
