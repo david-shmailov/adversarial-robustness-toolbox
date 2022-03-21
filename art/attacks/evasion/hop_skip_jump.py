@@ -235,8 +235,6 @@ class HopSkipJump(EvasionAttack):
             # reset:
             self.current_inquiry_counter = 0
 
-            if ind == 3: # todo delete this
-                break
 
         if y is not None:
             y = to_categorical(y, self.estimator.nb_classes)
@@ -674,8 +672,7 @@ class HopSkipJump(EvasionAttack):
         else:
             result = preds != target
         self.current_inquiry_counter += 1
-        if self.current_inquiry_counter > 700:
-            print(str(self.current_inquiry_counter)) # todo delete this!
+
         return result
 
     @staticmethod

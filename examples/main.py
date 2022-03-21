@@ -46,9 +46,9 @@ def main(func):
         preds = np.argmax(classifier.predict(x_test), axis=1)
         acc = np.sum(preds == np.argmax(y_test, axis=1)) / y_test.shape[0]
         print("\nTest accuracy: %.2f%%" % (acc * 100))
-        pickle.dump(classifier, open(classifier_file, "w"))
+        pickle.dump(classifier, open(classifier_file, "wb"))
     else:
-        classifier = pickle.load(open(classifier_file, "r"))
+        classifier = pickle.load(open(classifier_file, "rb"))
     # Craft adversarial samples with FGSM
 
     adv_crafter = HopSkipJump(classifier, log_file=log_name)
