@@ -34,7 +34,7 @@ from art.attacks.attack import EvasionAttack
 from art.estimators.estimator import BaseEstimator
 from art.estimators.classification import ClassifierMixin
 from art.utils import compute_success, to_categorical, check_and_transform_label_format
-
+from scipy.spatial.distance import cdist
 if TYPE_CHECKING:
     from art.utils import CLASSIFIER_TYPE
 
@@ -220,11 +220,11 @@ class HopSkipJump(EvasionAttack):
                     clip_max=clip_max,
                 )
 
+
             # L2 norm distance of error:
-            perturbation = np.linalg.norm(val - x_adv[ind])
             # todo counter for inquires :
 
-            self.pert_list.append(perturbation)
+
             self.inquiries_list.append(self.current_inquiry_counter)
 
             # reset:
@@ -477,6 +477,7 @@ class HopSkipJump(EvasionAttack):
                 logger.debug("NaN detected in sample, returning original sample.")
                 return original_sample
 
+        self.pert_list.append(np.linalg.norm(original_sample - current_sample))
         return current_sample
 
     def _binary_search(
