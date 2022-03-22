@@ -70,6 +70,8 @@ activation_functions = ['gelu',
                         ]
 
 if __name__ == '__main__':
-    main('elu')
-    #with Pool(2) as p:
+    function = 'elu'
+    print("Running function " + function)
+    main(function)
+    # with Pool(2) as p:
     #    print(p.map(main, activation_functions))

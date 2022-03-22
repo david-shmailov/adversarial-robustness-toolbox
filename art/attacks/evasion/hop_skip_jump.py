@@ -35,6 +35,7 @@ from art.estimators.estimator import BaseEstimator
 from art.estimators.classification import ClassifierMixin
 from art.utils import compute_success, to_categorical, check_and_transform_label_format, get_labels_np_array
 from scipy.spatial.distance import cdist
+
 if TYPE_CHECKING:
     from art.utils import CLASSIFIER_TYPE
 
@@ -231,10 +232,10 @@ class HopSkipJump(EvasionAttack):
 
             counter = self.current_inquiry_counter
             self.inquiries_list.append(counter)
-
+            if len(self.pert_list) < len(self.inquiries_list):
+                self.pert_list.append("None")
             # reset:
             self.current_inquiry_counter = 0
-
 
         if y is not None:
             y = to_categorical(y, self.estimator.nb_classes)
@@ -248,8 +249,13 @@ class HopSkipJump(EvasionAttack):
         with open(self.log_file, 'w') as log:
             log.write("image_number:\t num of inquiries:\t perturbation norm: \n")
             for ind, result in enumerate(self.inquiries_list):
-                log.write("\t\t{ind} \t\t {inquiries} \t\t {pert}\n"
-                          .format(ind=ind, inquiries=result, pert=self.pert_list[ind]))
+                if ind < len(self.pert_list):
+                    log.write("\t\t{ind} \t\t {inquiries} \t\t {pert}\n"
+                              .format(ind=ind, inquiries=result, pert=self.pert_list[ind]))
+                else:
+                    log.write("\t\t{ind} \t\t {inquiries} \t\t {pert}\n Warning! the sync between inquiries and norm "
+                              "is most likely incorrect in the whole file "
+                              .format(ind=ind, inquiries=result, pert="None"))
         return x_adv
 
     def _perturb(
@@ -283,12 +289,12 @@ class HopSkipJump(EvasionAttack):
 
         # If an initial adversarial example is not found, then return the original image
         if initial_sample is None:
+            self.pert_list.append("Attack Failed")
             return x
-
-        # If an initial adversarial example found, then go with HopSkipJump attack
-        x_adv = self._attack(initial_sample[0], x, initial_sample[1], mask, clip_min, clip_max)
-
-        return x_adv
+        else:
+            # If an initial adversarial example found, then go with HopSkipJump attack
+            x_adv = self._attack(initial_sample[0], x, initial_sample[1], mask, clip_min, clip_max)
+            return x_adv
 
     def _init_sample(
             self,
@@ -481,6 +487,7 @@ class HopSkipJump(EvasionAttack):
             # If attack failed. return original sample
             if np.isnan(current_sample).any():  # pragma: no cover
                 logger.debug("NaN detected in sample, returning original sample.")
+                self.pert_list.append("Attack Failed")
                 return original_sample
 
         self.pert_list.append(np.linalg.norm(original_sample - current_sample))
