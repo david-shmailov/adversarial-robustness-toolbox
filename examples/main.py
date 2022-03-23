@@ -63,7 +63,8 @@ def main(func):
 
 
 retrain = True
-activation_functions = ['gelu',
+activation_functions = [
+                        'gelu',
                         'elu',
                         'selu',
                         'tanh',
