@@ -10,11 +10,11 @@ from scipy.interpolate import interp1d, make_interp_spline
 size_of_data_set = 10000
 accuracies_after = {
     'relu': 0.8,
-    'gelu': 0,
+    'gelu': 10.25,
     'elu' : 10.36,
-    'selu': 0,
+    'selu': 10.57,
     'tanh': 10.43,
-    'sigmoid': 0,
+    'sigmoid': 1.85,
 }
 accuracies_before = {
     'relu': 98.97,
@@ -40,12 +40,13 @@ class GraphGenerator:
             files = glob(self.args.i + "*_results_log.txt")
             for file in files:
                 self.read_results(file)
-        self.create_graphs()
+        #self.create_graphs()
         #self.create_box_plot()
         #self.create_percentage_bar()
-        #self.network_accuracy_bar()
+        self.network_accuracy_bar()
 
     def create_graphs(self):
+        plt.rcParams.update({'font.size': 22})
         plt.figure(figsize=(20, 7))
         for func, data in self.files_data_including_failed.items():
             y = np.array(data)
@@ -61,13 +62,14 @@ class GraphGenerator:
             plt.plot(X_, Y_, label=func)
 
         plt.ylim(0, 5)
-        plt.xlabel("sample index")
+        plt.xlabel("Sample index")
         plt.ylabel("Perturbation Norm")
         plt.title("Perturbation intensity on each sample")
         plt.legend()
         plt.show()
 
     def create_box_plot(self):
+        plt.rcParams.update({'font.size': 18})
         plt.figure(figsize=(10, 7))
         plt.grid(visible=True, which='both')
         data = [norm for norm in self.files_data.values() if norm != 0]
@@ -78,6 +80,8 @@ class GraphGenerator:
         plt.show()
 
     def create_percentage_bar(self):
+        plt.rcParams.update({'font.size': 18})
+        plt.figure(figsize=(10,14))
         funcs = self.percentage_of_failures.keys()
         failed_percent = self.percentage_of_failures.values()
         plt.bar(funcs, failed_percent)
@@ -86,6 +90,7 @@ class GraphGenerator:
         plt.show()
 
     def network_accuracy_bar(self):
+        plt.rcParams.update({'font.size': 16})
         X = accuracies_after.keys()
         before = accuracies_before.values()
         after = accuracies_after.values()
@@ -99,7 +104,7 @@ class GraphGenerator:
         plt.ylabel("Test Accuracy")
         plt.title("DNN test accuracy before and after attacks")
         plt.grid(visible=True,which="both")
-        plt.legend()
+        plt.legend(loc="right")
         plt.show()
 
     def read_results(self, path):
