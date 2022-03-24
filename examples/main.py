@@ -70,7 +70,7 @@ activation_functions = ['gelu',
                         ]
 
 if __name__ == '__main__':
-    function = 'elu'
+    function = 'selu'
     print("Running function " + function)
     main(function)
     # with Pool(2) as p:
