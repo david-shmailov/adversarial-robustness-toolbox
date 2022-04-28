@@ -15,11 +15,13 @@ from os.path import exists
 from multiprocessing import Pool
 
 
-def main(func):
+def main(func1, func2):
     # drive_path = "/content/drive/My Drive/Colab Notebooks/"
+    accuracy_before_attack = 0
+
     force_train = True
-    log_name = "{}_results_log.txt".format(func)
-    classifier_file = "{}_trained_classifier".format(func)
+    log_name = "{}_{}_results_log.txt".format(func1, func2)
+    classifier_file = "{}_{}_trained_classifier".format(func1, func2)
     if not glob(classifier_file) or force_train:
         tf.compat.v1.disable_eager_execution()
         # Read MNIST dataset
@@ -28,12 +30,12 @@ def main(func):
         # Create Keras convolutional neural network - basic architecture from Keras examples
         # Source here: https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py
         model = Sequential()
-        model.add(Conv2D(32, kernel_size=(3, 3), activation=func, input_shape=x_train.shape[1:]))
-        model.add(Conv2D(64, (3, 3), activation=func))
+        model.add(Conv2D(32, kernel_size=(3, 3), activation=func1, input_shape=x_train.shape[1:]))
+        model.add(Conv2D(64, (3, 3), activation=func2))
         model.add(MaxPooling2D(pool_size=(2, 2)))
         model.add(Dropout(0.25))
         model.add(Flatten())
-        model.add(Dense(128, activation=func))
+        model.add(Dense(128, activation=func1))
         model.add(Dropout(0.5))
         model.add(Dense(10, activation="softmax"))
 
@@ -46,6 +48,7 @@ def main(func):
         preds = np.argmax(classifier.predict(x_test), axis=1)
         acc = np.sum(preds == np.argmax(y_test, axis=1)) / y_test.shape[0]
         print("\nTest accuracy: %.2f%%" % (acc * 100))
+        accuracy_before_attack = acc * 100
         pickle.dump(classifier, open(classifier_file, "wb"))
     else:
         classifier = pickle.load(open(classifier_file, "rb"))
@@ -57,12 +60,16 @@ def main(func):
     # Evaluate the classifier on the adversarial examples
     preds = np.argmax(classifier.predict(x_test_adv), axis=1)
     acc = np.sum(preds == np.argmax(y_test, axis=1)) / y_test.shape[0]
-    print("function: " + func)
+    print("function1: {}, function2: {}".format(func1, func2))
     print("\nTest accuracy on adversarial sample: %.2f%% " % (acc * 100))
-    return acc * 100
+    accuracy_after_attack = acc * 100
+    with open(log_name, 'a') as log_file:
+        result_before = "Test accuracy: %.2f%%\n" % accuracy_before_attack
+        result_after = "Test accuracy on Test accuracy on adversarial sample: %.2f%%\n" % accuracy_after_attack
+        log_file.write(result_before)
+        log_file.write(result_after)
 
 
-retrain = True
 activation_functions = [
                         'gelu',
                         'elu',
@@ -71,8 +78,8 @@ activation_functions = [
                         ]
 
 if __name__ == '__main__':
-    function = 'selu'
-    print("Running function " + function)
-    main(function)
+
+    main('gelu', 'tanh')
+    main('gelu', 'relu')
     # with Pool(2) as p:
     #    print(p.map(main, activation_functions))
