@@ -65,7 +65,7 @@ def main(func1, func2):
     accuracy_after_attack = acc * 100
     with open(log_name, 'a') as log_file:
         result_before = "Test accuracy: %.2f%%\n" % accuracy_before_attack
-        result_after = "Test accuracy on Test accuracy on adversarial sample: %.2f%%\n" % accuracy_after_attack
+        result_after = "Test accuracy on adversarial sample: %.2f%%\n" % accuracy_after_attack
         log_file.write(result_before)
         log_file.write(result_after)
 
@@ -79,7 +79,8 @@ activation_functions = [
 
 if __name__ == '__main__':
 
-    main('gelu', 'tanh')
-    main('gelu', 'relu')
+    main('sigmoid', 'elu')
+    main('relu', 'elu')
+    main('gelu', 'selu')
     # with Pool(2) as p:
     #    print(p.map(main, activation_functions))
