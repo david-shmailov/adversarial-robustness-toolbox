@@ -10,19 +10,19 @@ from scipy.interpolate import interp1d, make_interp_spline
 size_of_data_set = 10000
 accuracies_after = {
     'relu': 0.8,
+    'sigmoid': 1.85,
     'gelu': 10.25,
     'elu' : 10.36,
     'selu': 10.57,
     'tanh': 10.43,
-    'sigmoid': 1.85,
 }
 accuracies_before = {
     'relu': 98.97,
+    'sigmoid': 96.94,
     'gelu': 98.92,
     'elu' : 98.74,
     'selu': 98.43,
     'tanh': 98.62,
-    'sigmoid': 96.94,
 }
 
 class GraphGenerator:
@@ -42,8 +42,8 @@ class GraphGenerator:
                 self.read_results(file)
         #self.create_graphs()
         #self.create_box_plot()
-        #self.create_percentage_bar()
-        self.network_accuracy_bar()
+        self.create_percentage_bar()
+        #self.network_accuracy_bar()
 
     def create_graphs(self):
         plt.rcParams.update({'font.size': 22})
@@ -84,12 +84,16 @@ class GraphGenerator:
         plt.figure(figsize=(10,14))
         funcs = self.percentage_of_failures.keys()
         failed_percent = self.percentage_of_failures.values()
+        # funcs = [func for func in funcs if func not in ['relu','sigmoid']]
+        # failed_percent = [val for val in failed_percent if val > 0]
         plt.bar(funcs, failed_percent)
         plt.ylabel("Percentage")
-        plt.title("Percentage of failed attack attempts by HopSkipJump")
+        plt.ylim(0.09,0.1)
+        plt.title("Percentage of failed attacks")
         plt.show()
 
-    def network_accuracy_bar(self):
+    @staticmethod
+    def network_accuracy_bar():
         plt.rcParams.update({'font.size': 16})
         X = accuracies_after.keys()
         before = accuracies_before.values()
@@ -102,7 +106,7 @@ class GraphGenerator:
 
         plt.xticks(X_axis, X)
         plt.ylabel("Test Accuracy")
-        plt.title("DNN test accuracy before and after attacks")
+        plt.title("DNN Accuracy on test dataset")
         plt.grid(visible=True,which="both")
         plt.legend(loc="right")
         plt.show()
@@ -130,6 +134,7 @@ class GraphGenerator:
             self.percentage_of_failures[func] = failure_count / size_of_data_set
 
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', required=True, action='store', help="Specify one file for processing"
@@ -137,3 +142,7 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
     processor = GraphGenerator(arguments)
     processor.run()
+
+
+
+
