@@ -7,12 +7,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d, make_interp_spline
 
+
+
 size_of_data_set = 10000
 accuracies_after = {
     'relu': 0.8,
     'sigmoid': 1.85,
     'gelu': 10.25,
-    'elu' : 10.36,
+    'elu': 10.36,
     'selu': 10.57,
     'tanh': 10.43,
 }
@@ -20,10 +22,11 @@ accuracies_before = {
     'relu': 98.97,
     'sigmoid': 96.94,
     'gelu': 98.92,
-    'elu' : 98.74,
+    'elu': 98.74,
     'selu': 98.43,
     'tanh': 98.62,
 }
+
 
 class GraphGenerator:
     def __init__(self, args):
@@ -40,10 +43,10 @@ class GraphGenerator:
             files = glob(self.args.i + "*_results_log.txt")
             for file in files:
                 self.read_results(file)
-        #self.create_graphs()
-        #self.create_box_plot()
+        self.create_graphs()
+        self.create_box_plot()
         self.create_percentage_bar()
-        #self.network_accuracy_bar()
+        self.network_accuracy_bar()
 
     def create_graphs(self):
         plt.rcParams.update({'font.size': 22})
@@ -56,7 +59,7 @@ class GraphGenerator:
 
             # Returns evenly spaced numbers
             # over a specified interval.
-            X_ = np.linspace(x.min(), x.max() , 500)
+            X_ = np.linspace(x.min(), x.max(), 500)
             Y_ = X_Y_Spline(X_)
             # Plotting the Graph
             plt.plot(X_, Y_, label=func)
@@ -70,7 +73,7 @@ class GraphGenerator:
 
     def create_box_plot(self):
         plt.rcParams.update({'font.size': 18})
-        plt.figure(figsize=(10, 7))
+        plt.figure(figsize=(20, 7))
         plt.grid(visible=True, which='both')
         data = [norm for norm in self.files_data.values() if norm != 0]
         funcs = self.files_data.keys()
@@ -81,20 +84,21 @@ class GraphGenerator:
 
     def create_percentage_bar(self):
         plt.rcParams.update({'font.size': 18})
-        plt.figure(figsize=(10,14))
+        plt.figure(figsize=(20, 14))
         funcs = self.percentage_of_failures.keys()
         failed_percent = self.percentage_of_failures.values()
         # funcs = [func for func in funcs if func not in ['relu','sigmoid']]
         # failed_percent = [val for val in failed_percent if val > 0]
         plt.bar(funcs, failed_percent)
         plt.ylabel("Percentage")
-        plt.ylim(0.09,0.1)
+        plt.ylim(0.09, 0.1)
         plt.title("Percentage of failed attacks")
         plt.show()
 
     @staticmethod
     def network_accuracy_bar():
         plt.rcParams.update({'font.size': 16})
+        plt.figure(figsize=(20, 14))
         X = accuracies_after.keys()
         before = accuracies_before.values()
         after = accuracies_after.values()
@@ -107,7 +111,7 @@ class GraphGenerator:
         plt.xticks(X_axis, X)
         plt.ylabel("Test Accuracy")
         plt.title("DNN Accuracy on test dataset")
-        plt.grid(visible=True,which="both")
+        plt.grid(visible=True, which="both")
         plt.legend(loc="right")
         plt.show()
 
@@ -116,9 +120,20 @@ class GraphGenerator:
             file_data = []  # lists of perturbations, the indexes of the list are the same indexes of the image
             file_data_with_failure = []
             failure_count = 0
+            func = re.search(r'(\w+)_results_log\.txt', path).group(1)
             file.readline()  # skip the header
             line = file.readline()
             while line:
+                acc_before = re.search(r'Test\s+accuracy:\s+(\d+\.\d+)', line)
+                acc_after = re.search(r'Test\s+accuracy\s+on\s+adversarial\s+sample:\s+(\d+\.\d+)', line)
+                if acc_before:
+                    accuracies_before[func] = float(acc_before.group(1))
+                    line = file.readline()
+                    continue
+                elif acc_after:
+                    accuracies_after[func] = float(acc_after.group(1))
+                    line = file.readline()
+                    continue
                 norm = line.split()[2]
                 if norm != 'Attack':  # if attack failed
                     file_data.append(float(norm))
@@ -128,11 +143,9 @@ class GraphGenerator:
                     file_data_with_failure.append(float(0))
                 line = file.readline()
             # extract function name from file path:
-            func = re.search(r'([a-z]+)_results_log\.txt', path).group(1)
             self.files_data[func] = file_data
             self.files_data_including_failed[func] = file_data_with_failure
             self.percentage_of_failures[func] = failure_count / size_of_data_set
-
 
 
 if __name__ == "__main__":
@@ -142,7 +155,3 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
     processor = GraphGenerator(arguments)
     processor.run()
-
-
-
-

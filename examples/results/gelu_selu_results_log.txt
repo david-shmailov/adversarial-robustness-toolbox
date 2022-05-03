@@ -10000,4 +10000,4 @@ image_number:	 num of inquiries:	 perturbation norm:
 		9998 		 710 		 1.1507586240768433
 		9999 		 710 		 1.85843825340271
 Test accuracy: 98.77%
-Test accuracy on Test accuracy on adversarial sample: 10.23%
+Test accuracy on adversarial sample: 10.23%
