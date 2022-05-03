@@ -55,7 +55,7 @@ def main(func1, func2, args):
         classifier = pickle.load(open(classifier_file, "rb"))
     # Craft adversarial samples with FGSM
     if args.d:
-        adv_crafter = HopSkipJump(classifier, log_file=log_name,max_eval=1,init_eval=1)
+        adv_crafter = HopSkipJump(classifier, log_file=log_name,max_eval=1,init_eval=1, max_iter=1)
     else:
         adv_crafter = HopSkipJump(classifier, log_file=log_name)
 
