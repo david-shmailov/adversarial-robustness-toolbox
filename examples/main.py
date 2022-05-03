@@ -11,11 +11,12 @@ from art.attacks.evasion import HopSkipJump
 from art.estimators.classification import KerasClassifier
 from art.utils import load_dataset
 import tensorflow as tf
+import argparse
 from os.path import exists
 from multiprocessing import Pool
 
 
-def main(func1, func2):
+def main(func1, func2, args):
     # drive_path = "/content/drive/My Drive/Colab Notebooks/"
     accuracy_before_attack = 0
 
@@ -53,8 +54,11 @@ def main(func1, func2):
     else:
         classifier = pickle.load(open(classifier_file, "rb"))
     # Craft adversarial samples with FGSM
+    if args.d:
+        adv_crafter = HopSkipJump(classifier, log_file=log_name,max_eval=1,init_eval=1)
+    else:
+        adv_crafter = HopSkipJump(classifier, log_file=log_name)
 
-    adv_crafter = HopSkipJump(classifier, log_file=log_name,max_eval=1,init_eval=1)
     x_test_adv = adv_crafter.generate(x=x_test)
 
     # Evaluate the classifier on the adversarial examples
@@ -78,9 +82,11 @@ activation_functions = [
                         ]
 
 if __name__ == '__main__':
-
-    main('sigmoid', 'elu')
-    main('relu', 'elu')
-    main('gelu', 'selu')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', action='store_true', help="debug, very short hop_skip run")
+    args = parser.parse_args()
+    main('sigmoid', 'elu',args)
+    main('relu', 'elu',args)
+    main('gelu', 'selu',args)
     # with Pool(2) as p:
     #    print(p.map(main, activation_functions))
