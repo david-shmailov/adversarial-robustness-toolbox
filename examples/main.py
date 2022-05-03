@@ -54,7 +54,7 @@ def main(func1, func2):
         classifier = pickle.load(open(classifier_file, "rb"))
     # Craft adversarial samples with FGSM
 
-    adv_crafter = HopSkipJump(classifier, log_file=log_name)
+    adv_crafter = HopSkipJump(classifier, log_file=log_name,max_eval=1,init_eval=1)
     x_test_adv = adv_crafter.generate(x=x_test)
 
     # Evaluate the classifier on the adversarial examples
