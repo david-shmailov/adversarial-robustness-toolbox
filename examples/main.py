@@ -13,7 +13,8 @@ from art.utils import load_dataset
 import tensorflow as tf
 import argparse
 from os.path import exists
-from multiprocessing import Pool
+import threading
+
 
 
 def main(func1, func2, args):
@@ -74,18 +75,25 @@ def main(func1, func2, args):
 
 
 activation_functions = [
+                        'relu',
                         'gelu',
                         'elu',
                         'selu',
                         'tanh',
+                        'sigmoid',
                         ]
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', action='store_true', help="debug, very short hop_skip run")
     args = parser.parse_args()
-    main('sigmoid', 'elu',args)
-    main('relu', 'elu',args)
-    main('gelu', 'selu',args)
-    # with Pool(2) as p:
-    #    print(p.map(main, activation_functions))
+    proc_list = [None]*len(activation_functions)
+    for ind, func in enumerate(activation_functions):
+        proc_list[ind] = threading.Thread(target=main, args=(func,func))
+        proc_list[ind].start()
+
+    for proc in proc_list:
+        proc.join()
+        print(f'{proc} is finished')
+
+
