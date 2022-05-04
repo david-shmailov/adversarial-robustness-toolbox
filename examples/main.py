@@ -17,11 +17,10 @@ from multiprocessing import Pool
 
 
 def main(func1, func2, args):
-    # drive_path = "/content/drive/My Drive/Colab Notebooks/"
     accuracy_before_attack = 0
-
+    path_for_results = './results/'
     force_train = True
-    log_name = "{}_{}_results_log.txt".format(func1, func2)
+    log_name = f"{path_for_results}{func1}_{func2}_results_log.txt"
     classifier_file = "{}_{}_trained_classifier".format(func1, func2)
     if not glob(classifier_file) or force_train:
         tf.compat.v1.disable_eager_execution()
