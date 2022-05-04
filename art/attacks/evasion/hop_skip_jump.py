@@ -91,8 +91,14 @@ class HopSkipJump(EvasionAttack):
         :param verbose: Show progress bars.
         """
         super().__init__(estimator=classifier)
+        # todo statistics
+        self.new_inquiries_list = []
+        self.current_sample_index = -1
+        self.num_of_samples = 0
+
         self.inquiries_list = []
         self.pert_list = []
+
         self.log_file = log_file
         self.current_inquiry_counter = 0
         self._targeted = targeted
@@ -132,6 +138,10 @@ class HopSkipJump(EvasionAttack):
         :return: An array holding the adversarial examples.
         """
 
+        # todo statistics
+        self.num_of_samples = x.shape[0]
+        self.new_inquiries_list = [0] * self.num_of_samples
+
         mask = kwargs.get("mask")
 
         if y is None:
@@ -140,7 +150,7 @@ class HopSkipJump(EvasionAttack):
                 raise ValueError("Target labels `y` need to be provided for a targeted attack.")
 
             # Use model predictions as correct outputs
-            y = get_labels_np_array(self.estimator.predict(x, batch_size=self.batch_size))  # type: ignore
+            y = get_labels_np_array(self._wrapper_predict(x, batch_size=self.batch_size))  # type: ignore
 
         y = check_and_transform_label_format(y, self.estimator.nb_classes)
 
@@ -173,7 +183,7 @@ class HopSkipJump(EvasionAttack):
             clip_min, clip_max = np.min(x), np.max(x)
 
         # Prediction from the original images
-        preds = np.argmax(self.estimator.predict(x, batch_size=self.batch_size), axis=1)
+        preds = np.argmax(self._wrapper_predict(x, batch_size=self.batch_size), axis=1)
 
         # Prediction from the initial adversarial examples if not None
         x_adv_init = kwargs.get("x_adv_init")
@@ -185,7 +195,7 @@ class HopSkipJump(EvasionAttack):
                     x_adv_init[i] = x_adv_init[i] * mask[i] + x[i] * (1 - mask[i])
 
             # Do prediction on the init
-            init_preds = np.argmax(self.estimator.predict(x_adv_init, batch_size=self.batch_size), axis=1)
+            init_preds = np.argmax(self._wrapper_predict(x_adv_init, batch_size=self.batch_size), axis=1)
 
         else:
             init_preds = [None] * len(x)
@@ -203,6 +213,7 @@ class HopSkipJump(EvasionAttack):
 
         # Generate the adversarial samples
         for ind, val in enumerate(tqdm(x_adv, desc="HopSkipJump", disable=not self.verbose)):
+            self.current_sample_index = ind
             self.curr_iter = start
 
             if self.targeted:
@@ -248,7 +259,7 @@ class HopSkipJump(EvasionAttack):
         # todo add writing to log file
         with open(self.log_file, 'w') as log:
             log.write("image_number:\t num of inquiries:\t perturbation norm: \n")
-            for ind, result in enumerate(self.inquiries_list):
+            for ind, result in enumerate(self.new_inquiries_list):
                 if ind < len(self.pert_list):
                     log.write("\t\t{ind} \t\t {inquiries} \t\t {pert}\n"
                               .format(ind=ind, inquiries=result, pert=self.pert_list[ind]))
@@ -342,7 +353,7 @@ class HopSkipJump(EvasionAttack):
                     random_img = random_img * mask + x * (1 - mask)
 
                 random_class = np.argmax(
-                    self.estimator.predict(np.array([random_img]), batch_size=self.batch_size),
+                    self._wrapper_predict(np.array([random_img]), batch_size=self.batch_size),
                     axis=1,
                 )[0]
 
@@ -377,7 +388,7 @@ class HopSkipJump(EvasionAttack):
                     random_img = random_img * mask + x * (1 - mask)
 
                 random_class = np.argmax(
-                    self.estimator.predict(np.array([random_img]), batch_size=self.batch_size),
+                    self._wrapper_predict(np.array([random_img]), batch_size=self.batch_size),
                     axis=1,
                 )[0]
 
@@ -672,7 +683,7 @@ class HopSkipJump(EvasionAttack):
         :return: An array of 0/1.
         """
         samples = np.clip(samples, clip_min, clip_max)
-        preds = np.argmax(self.estimator.predict(samples, batch_size=self.batch_size), axis=1)
+        preds = np.argmax(self._wrapper_predict(samples, batch_size=self.batch_size), axis=1)
 
         if self.targeted:
             result = preds == target
@@ -681,6 +692,17 @@ class HopSkipJump(EvasionAttack):
         self.current_inquiry_counter += 1
 
         return result
+
+    def _wrapper_predict(self, x, **kwargs):
+        if x.shape[0] == self.num_of_samples:
+            # else if x is of size <test set> add 1 to all
+            self.new_inquiries_list = [inq + 1 for inq in self.new_inquiries_list]
+        elif x.shape[0] == 1:
+            # if x is size 1, use the current index of image global variable to add the image counter
+            self.new_inquiries_list[self.current_sample_index] += 1
+        else:
+            raise RuntimeError("wrapper_predict got an array of not len(x) or 1 size.")
+        return self.estimator.predict(x, **kwargs)
 
     @staticmethod
     def _interpolate(
