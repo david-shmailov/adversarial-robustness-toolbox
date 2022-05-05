@@ -8,7 +8,7 @@ from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, Dropout
 import numpy as np
 import pickle
 from glob import glob
-#from art.attacks.evasion import HopSkipJump
+# from art.attacks.evasion import HopSkipJump
 from hop_skip_jump import HopSkipJump
 from art.estimators.classification import KerasClassifier
 from art.utils import load_dataset
@@ -57,7 +57,7 @@ def main(func1, func2, args):
     # Craft adversarial samples with FGSM
     if args.d:
         adv_crafter = HopSkipJump(classifier, log_file=log_name, max_eval=1, init_eval=1, max_iter=1)
-        #single_image = x_test
+        # single_image = x_test
         x_test_adv = adv_crafter.generate(x=x_test)
 
     else:
@@ -89,15 +89,16 @@ activation_functions = [
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', action='store_true', help="debug, very short hop_skip run")
-    parser.add_argument('-all', action='store_true',help="Run all activation function tests in parallel")
+    parser.add_argument('-all', action='store_true', help="Run all activation function tests in parallel")
     args = parser.parse_args()
     if not args.all:
-        activation_functions = ['relu']
-    proc_list = [None] * len(activation_functions)
-    for ind, func in enumerate(activation_functions):
-        proc_list[ind] = threading.Thread(target=main, args=(func, func, args))
-        proc_list[ind].start()
+        main('relu', 'relu', args)
+    else:
+        proc_list = [None] * len(activation_functions)
+        for ind, func in enumerate(activation_functions):
+            proc_list[ind] = threading.Thread(target=main, args=(func, func, args))
+            proc_list[ind].start()
 
-    for proc in proc_list:
-        proc.join()
-        print(f'{proc} is finished')
+        for proc in proc_list:
+            proc.join()
+            print(f'{proc} is finished')

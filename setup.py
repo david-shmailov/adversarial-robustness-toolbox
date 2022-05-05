@@ -54,7 +54,7 @@ setup(
     author_email="irinutza.n@gmail.com",
     maintainer="Beat Buesser",
     maintainer_email="beat.buesser@ie.ibm.com",
-    url="https://github.com/david-shmailov/adversarial-robustness-toolbox.git",
+    url="https://github.com/Trusted-AI/adversarial-robustness-toolbox",
     license="MIT",
     install_requires=install_requires,
     extras_require={
