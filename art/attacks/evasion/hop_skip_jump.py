@@ -247,6 +247,8 @@ class HopSkipJump(EvasionAttack):
                 self.pert_list.append("None")
             # reset:
             self.current_inquiry_counter = 0
+            print(self.new_inquiries_list[ind])
+            quit() # debug
 
         if y is not None:
             y = to_categorical(y, self.estimator.nb_classes)
