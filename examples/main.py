@@ -87,8 +87,9 @@ activation_functions = [
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', action='store_true', help="debug, very short hop_skip run")
+    parser.add_argument('-all', action='store_true',help="Run all activation function tests in parallel")
     args = parser.parse_args()
-    if args.d:
+    if not args.all:
         activation_functions = ['relu']
     proc_list = [None] * len(activation_functions)
     for ind, func in enumerate(activation_functions):
