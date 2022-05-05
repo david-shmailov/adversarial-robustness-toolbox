@@ -460,6 +460,7 @@ class HopSkipJump(EvasionAttack):
             # Next compute the number of evaluations and compute the update
             num_eval = min(int(self.init_eval * np.sqrt(self.curr_iter + 1)), self.max_eval)
 
+            # TODO : to check this function
             update = self._compute_update(
                 current_sample=current_sample,
                 num_eval=num_eval,
@@ -697,11 +698,11 @@ class HopSkipJump(EvasionAttack):
         if x.shape[0] == self.num_of_samples:
             # else if x is of size <test set> add 1 to all
             self.new_inquiries_list = [inq + 1 for inq in self.new_inquiries_list]
-        elif x.shape[0] == 1:
+        else :
             # if x is size 1, use the current index of image global variable to add the image counter
-            self.new_inquiries_list[self.current_sample_index] += 1
-        else:
-            raise RuntimeError("wrapper_predict got an array of not len(x) or 1 size.")
+            self.new_inquiries_list[self.current_sample_index] += x.shape[0]
+        #else:
+        #    raise RuntimeError("wrapper_predict got an array of not len(x) or 1 size.")
         return self.estimator.predict(x, **kwargs)
 
     @staticmethod
