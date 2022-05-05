@@ -8,7 +8,8 @@ from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, Dropout
 import numpy as np
 import pickle
 from glob import glob
-from art.attacks.evasion import HopSkipJump
+#from art.attacks.evasion import HopSkipJump
+from hop_skip_jump import HopSkipJump
 from art.estimators.classification import KerasClassifier
 from art.utils import load_dataset
 import tensorflow as tf
