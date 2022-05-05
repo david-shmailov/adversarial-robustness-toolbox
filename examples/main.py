@@ -55,10 +55,12 @@ def main(func1, func2, args):
     # Craft adversarial samples with FGSM
     if args.d:
         adv_crafter = HopSkipJump(classifier, log_file=log_name, max_eval=1, init_eval=1, max_iter=1)
+        #single_image = x_test
+        x_test_adv = adv_crafter.generate(x=x_test)
+
     else:
         adv_crafter = HopSkipJump(classifier, log_file=log_name)
-
-    x_test_adv = adv_crafter.generate(x=x_test)
+        x_test_adv = adv_crafter.generate(x=x_test)
 
     # Evaluate the classifier on the adversarial examples
     preds = np.argmax(classifier.predict(x_test_adv), axis=1)
@@ -86,6 +88,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', action='store_true', help="debug, very short hop_skip run")
     args = parser.parse_args()
+    if args.d:
+        activation_functions = ['relu']
     proc_list = [None] * len(activation_functions)
     for ind, func in enumerate(activation_functions):
         proc_list[ind] = threading.Thread(target=main, args=(func, func, args))

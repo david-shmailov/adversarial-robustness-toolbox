@@ -700,6 +700,7 @@ class HopSkipJump(EvasionAttack):
             self.new_inquiries_list = [inq + 1 for inq in self.new_inquiries_list]
         else :
             # if x is size 1, use the current index of image global variable to add the image counter
+            # some cases compute_update inquire for more than one perturbed pictures of the same original picture
             self.new_inquiries_list[self.current_sample_index] += x.shape[0]
         #else:
         #    raise RuntimeError("wrapper_predict got an array of not len(x) or 1 size.")
