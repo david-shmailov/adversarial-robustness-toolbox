@@ -15,7 +15,7 @@ from art.utils import load_dataset
 import tensorflow as tf
 import argparse
 from os.path import exists
-import threading
+import multiprocessing
 
 
 def main(func1, func2, args):
@@ -44,7 +44,7 @@ def main(func1, func2, args):
         model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
         classifier = KerasClassifier(model=model, clip_values=(min_, max_), use_logits=False)
-        classifier.fit(x_train, y_train, nb_epochs=5, batch_size=128)
+        classifier.fit(x_train, y_train, nb_epochs=20, batch_size=128)
 
         # Evaluate the classifier on the test set
         preds = np.argmax(classifier.predict(x_test), axis=1)
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     else:
         proc_list = [None] * len(activation_functions)
         for ind, func in enumerate(activation_functions):
-            proc_list[ind] = threading.Thread(target=main, args=(func, func, args))
+            proc_list[ind] = multiprocessing.Process(target=main, args=(func, func, args))
             proc_list[ind].start()
 
         for proc in proc_list:
