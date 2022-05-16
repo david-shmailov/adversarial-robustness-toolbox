@@ -36,6 +36,8 @@ class GraphGenerator:
         self.files_counters_including_failed = {}
         self.percentage_of_failures = {}
         self.args = args
+        self.inquiries_higher_than_relu = {}
+
 
     def run(self):
         if isfile(self.args.i):
@@ -46,11 +48,33 @@ class GraphGenerator:
             for file in files:
                 self.read_results(file)
         self.create_graphs_for_inquiries()
+        self.percent_higher_than_relu()
         # self.create_graphs()
         # self.box_plot_perturbations()
         # self.create_percentage_bar()
         # self.network_accuracy_bar()
         # self.box_plot_for_inquiries()
+
+
+    def percent_higher_than_relu(self):
+        plt.rcParams.update({'font.size': 18})
+        plt.figure(figsize=(20, 14))
+        funcs = self.files_counters_including_failed.keys()
+        for func in funcs:
+            if 'relu' not in func:
+                self.inquiries_higher_than_relu[func] = 0
+                for ind,count in enumerate(self.files_counters_including_failed[func]):
+                    if count > self.files_counters_including_failed['relu_relu'][ind]:
+                        self.inquiries_higher_than_relu[func] += 1
+                self.inquiries_higher_than_relu[func] /= (size_of_data_set/100);
+
+        x = self.inquiries_higher_than_relu.keys()
+        y = self.inquiries_higher_than_relu.values()
+        plt.bar(x, y)
+        plt.ylabel("Percentage")
+        plt.ylim(0, 100)
+        plt.title("Percentage of attacks that had higher inquiries compared to ReLU")
+        plt.show()
 
     def create_graphs_for_inquiries(self):
         plt.rcParams.update({'font.size': 22})
