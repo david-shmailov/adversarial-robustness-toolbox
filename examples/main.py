@@ -94,11 +94,13 @@ if __name__ == '__main__':
     if not args.all:
         main('relu', 'relu', args)
     else:
-        proc_list = [None] * len(activation_functions)
-        for ind, func in enumerate(activation_functions):
-            proc_list[ind] = multiprocessing.Process(target=main, args=(func, func, args))
-            proc_list[ind].start()
-
-        for proc in proc_list:
-            proc.join()
-            print(f'{proc} is finished')
+        for func in activation_functions:
+            main(func, func, args)
+        # proc_list = [None] * len(activation_functions)
+        # for ind, func in enumerate(activation_functions):
+        #     proc_list[ind] = multiprocessing.Process(target=main, args=(func, func, args))
+        #     proc_list[ind].start()
+        #
+        # for proc in proc_list:
+        #     proc.join()
+        #     print(f'{proc} is finished')
