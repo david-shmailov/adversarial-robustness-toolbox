@@ -49,11 +49,11 @@ class GraphGenerator:
                 self.read_results(file)
         self.create_graphs_for_inquiries()
         self.percent_higher_than_relu()
-        # self.create_graphs()
-        # self.box_plot_perturbations()
-        # self.create_percentage_bar()
-        # self.network_accuracy_bar()
-        # self.box_plot_for_inquiries()
+        self.create_graphs()
+        self.box_plot_perturbations()
+        self.create_percentage_bar()
+        self.network_accuracy_bar()
+        self.box_plot_for_inquiries()
 
 
     def percent_higher_than_relu(self):
@@ -154,7 +154,7 @@ class GraphGenerator:
         # failed_percent = [val for val in failed_percent if val > 0]
         plt.bar(funcs, failed_percent)
         plt.ylabel("Percentage")
-        plt.ylim(0.09, 0.1)
+        plt.ylim(5,15)
         plt.title("Percentage of failed attacks")
         plt.show()
 
@@ -201,7 +201,7 @@ class GraphGenerator:
                     continue
                 norm = line.split()[2]
                 count = line.split()[1]
-                if norm != 'Attack':  # if attack failed
+                if norm != 'Attack':  # if attack not failed
                     file_counters.append(int(count))
                     file_counters_with_failure.append(int(count))
                     file_data.append(float(norm))
@@ -216,7 +216,7 @@ class GraphGenerator:
             self.files_counters_including_failed[func] = file_counters_with_failure
             self.files_data[func] = file_data
             self.files_data_including_failed[func] = file_data_with_failure
-            self.percentage_of_failures[func] = failure_count / size_of_data_set
+            self.percentage_of_failures[func] = (failure_count*100) / size_of_data_set
 
 
 if __name__ == "__main__":

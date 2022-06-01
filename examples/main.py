@@ -92,7 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('-all', action='store_true', help="Run all activation function tests in parallel")
     args = parser.parse_args()
     if not args.all:
-        main('relu', 'relu', args)
+        main('exponential', 'exponential', args)
     else:
         for func in activation_functions:
             main(func, func, args)
