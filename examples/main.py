@@ -45,7 +45,7 @@ def main(func1, func2, args):
         model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
         classifier = KerasClassifier(model=model, clip_values=(min_, max_), use_logits=False)
-        classifier.fit(x_train, y_train, nb_epochs=epochs, batch_size=128)
+        classifier.fit(x_train, y_train, nb_epochs=30, batch_size=128)
 
         # Evaluate the classifier on the test set
         preds = np.argmax(classifier.predict(x_test), axis=1)
