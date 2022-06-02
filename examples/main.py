@@ -19,6 +19,7 @@ import multiprocessing
 
 
 def main(func1, func2, args):
+    epochs = int(args.epoch) if args.epoch else 5
     accuracy_before_attack = 0
     path_for_results = './results/'
     force_train = True
@@ -90,7 +91,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', action='store_true', help="debug, very short hop_skip run")
     parser.add_argument('-all', action='store_true', help="Run all activation function tests in parallel")
+    parser.add_argument('-epoch', action="store", help = "number of epochs for model. default 5")
     args = parser.parse_args()
+
     if not args.all:
         main('exponential', 'exponential', args)
     else:

@@ -47,13 +47,13 @@ class GraphGenerator:
             files = glob(self.args.i + "*_results_log.txt")
             for file in files:
                 self.read_results(file)
-        self.create_graphs_for_inquiries()
-        self.percent_higher_than_relu()
-        self.create_graphs()
-        self.box_plot_perturbations()
+        # self.create_graphs_for_inquiries()
+        # self.percent_higher_than_relu()
+        # self.create_graphs()
+        # self.box_plot_perturbations()
         self.create_percentage_bar()
-        self.network_accuracy_bar()
-        self.box_plot_for_inquiries()
+        # self.network_accuracy_bar()
+        # self.box_plot_for_inquiries()
 
 
     def percent_higher_than_relu(self):
@@ -64,7 +64,7 @@ class GraphGenerator:
             if 'relu' not in func:
                 self.inquiries_higher_than_relu[func] = 0
                 for ind,count in enumerate(self.files_counters_including_failed[func]):
-                    if count > self.files_counters_including_failed['relu_relu'][ind]:
+                    if count > self.files_counters_including_failed['relu'][ind]:
                         self.inquiries_higher_than_relu[func] += 1
                 self.inquiries_higher_than_relu[func] /= (size_of_data_set/100);
 
@@ -154,7 +154,7 @@ class GraphGenerator:
         # failed_percent = [val for val in failed_percent if val > 0]
         plt.bar(funcs, failed_percent)
         plt.ylabel("Percentage")
-        plt.ylim(5,15)
+        plt.ylim(5,40)
         plt.title("Percentage of failed attacks")
         plt.show()
 
@@ -185,7 +185,7 @@ class GraphGenerator:
             file_counters = []
             file_counters_with_failure = []
             failure_count = 0
-            func = re.search(r'(\w+)_results_log\.txt', path).group(1)
+            func = re.search(r'(\w+)_results_log\.txt', path).group(1).split('_')[0]
             file.readline()  # skip the header
             line = file.readline()
             while line:
