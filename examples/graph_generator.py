@@ -47,13 +47,13 @@ class GraphGenerator:
             files = glob(self.args.i + "*_results_log.txt")
             for file in files:
                 self.read_results(file)
-        # self.create_graphs_for_inquiries()
-        # self.percent_higher_than_relu()
-        # self.create_graphs()
-        # self.box_plot_perturbations()
+        self.create_graphs_for_inquiries()
+        self.percent_higher_than_relu()
+        self.create_graphs()
+        self.box_plot_perturbations()
         self.create_percentage_bar()
-        # self.network_accuracy_bar()
-        # self.box_plot_for_inquiries()
+        self.network_accuracy_bar()
+        self.box_plot_for_inquiries()
 
 
     def percent_higher_than_relu(self):
