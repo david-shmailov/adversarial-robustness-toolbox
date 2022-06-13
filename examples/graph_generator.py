@@ -154,7 +154,7 @@ class GraphGenerator:
         # failed_percent = [val for val in failed_percent if val > 0]
         plt.bar(funcs, failed_percent)
         plt.ylabel("Percentage")
-        plt.ylim(5,40)
+        plt.ylim(0,40)
         plt.title("Percentage of failed attacks")
         plt.show()
 

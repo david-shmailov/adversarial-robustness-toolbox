@@ -11,6 +11,7 @@ from glob import glob
 # from art.attacks.evasion import HopSkipJump
 from hop_skip_jump import HopSkipJump
 from art.estimators.classification import KerasClassifier
+from art.defences.preprocessor import *
 from art.utils import load_dataset
 import tensorflow as tf
 import argparse
@@ -18,49 +19,44 @@ from os.path import exists
 import multiprocessing
 
 
-def main(func1, func2, args):
+def main(func1, test, args, preprocessor=None):
     epochs = int(args.epoch) if args.epoch else 5
     accuracy_before_attack = 0
     path_for_results = './results/'
-    force_train = True
-    log_name = f"{path_for_results}{func1}_{func2}_results_log.txt"
-    classifier_file = "{}_{}_trained_classifier".format(func1, func2)
-    if not glob(classifier_file) or force_train:
-        tf.compat.v1.disable_eager_execution()
-        # Read MNIST dataset
-        (x_train, y_train), (x_test, y_test), min_, max_ = load_dataset(str("mnist"))
+    log_name = f"{path_for_results}{func1}_{test}_results_log.txt"
 
-        # Create Keras convolutional neural network - basic architecture from Keras examples
-        # Source here: https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py
-        model = Sequential()
-        model.add(Conv2D(32, kernel_size=(3, 3), activation=func1, input_shape=x_train.shape[1:]))
-        model.add(Conv2D(64, (3, 3), activation=func2))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Dropout(0.25))
-        model.add(Flatten())
-        model.add(Dense(128, activation=func1))
-        model.add(Dropout(0.5))
-        model.add(Dense(10, activation="softmax"))
+    tf.compat.v1.disable_eager_execution()
+    # Read MNIST dataset
+    (x_train, y_train), (x_test, y_test), min_, max_ = load_dataset(str("mnist"))
 
-        model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    # Create Keras convolutional neural network - basic architecture from Keras examples
+    # Source here: https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py
+    model = Sequential()
+    model.add(Conv2D(32, kernel_size=(3, 3), activation=func1, input_shape=x_train.shape[1:]))
+    model.add(Conv2D(64, (3, 3), activation=func1))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+    model.add(Flatten())
+    model.add(Dense(128, activation=func1))
+    model.add(Dropout(0.5))
+    model.add(Dense(10, activation="softmax"))
 
-        classifier = KerasClassifier(model=model, clip_values=(min_, max_), use_logits=False)
-        classifier.fit(x_train, y_train, nb_epochs=20, batch_size=128)
+    model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
-        # Evaluate the classifier on the test set
-        preds = np.argmax(classifier.predict(x_test), axis=1)
-        acc = np.sum(preds == np.argmax(y_test, axis=1)) / y_test.shape[0]
-        print("\nTest accuracy: %.2f%%" % (acc * 100))
-        accuracy_before_attack = acc * 100
-        pickle.dump(classifier, open(classifier_file, "wb"))
-    else:
-        classifier = pickle.load(open(classifier_file, "rb"))
+    classifier = KerasClassifier(model=model, clip_values=(min_, max_), use_logits=False, preprocessing_defences=preprocessor)
+    classifier.fit(x_train, y_train, nb_epochs=5, batch_size=128)
+
+    # Evaluate the classifier on the test set
+    preds = np.argmax(classifier.predict(x_test), axis=1)
+    acc = np.sum(preds == np.argmax(y_test, axis=1)) / y_test.shape[0]
+    print("\nTest accuracy: %.2f%%" % (acc * 100))
+    accuracy_before_attack = acc * 100
+
     # Craft adversarial samples with FGSM
     if args.d:
         adv_crafter = HopSkipJump(classifier, log_file=log_name, max_eval=1, init_eval=1, max_iter=1)
         # single_image = x_test
         x_test_adv = adv_crafter.generate(x=x_test)
-
     else:
         adv_crafter = HopSkipJump(classifier, log_file=log_name)
         x_test_adv = adv_crafter.generate(x=x_test)
@@ -68,7 +64,7 @@ def main(func1, func2, args):
     # Evaluate the classifier on the adversarial examples
     preds = np.argmax(classifier.predict(x_test_adv), axis=1)
     acc = np.sum(preds == np.argmax(y_test, axis=1)) / y_test.shape[0]
-    print("function1: {}, function2: {}".format(func1, func2))
+    print("function: {}, preprocessor: {}".format(func1, test))
     print("\nTest accuracy on adversarial sample: %.2f%% " % (acc * 100))
     accuracy_after_attack = acc * 100
     with open(log_name, 'a') as log_file:
@@ -78,14 +74,7 @@ def main(func1, func2, args):
         log_file.write(result_after)
 
 
-activation_functions = [
-    'relu',
-    'gelu',
-    'elu',
-    'selu',
-    'tanh',
-    'sigmoid',
-]
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -94,16 +83,36 @@ if __name__ == '__main__':
     parser.add_argument('-epoch', action="store", help = "number of epochs for model. default 5")
     args = parser.parse_args()
 
+    activation_functions = [
+        'relu',
+        # 'gelu',
+        'elu',
+        # 'selu',
+        # 'tanh',
+        # 'sigmoid',
+    ]
+    preprocessors = {
+        'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
+        'gaussian_predict':GaussianAugmentation(augmentation=False, apply_fit=False, apply_predict=True),
+        'gaussian_both':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=True),
+        'spacial_smooth_train':SpatialSmoothing( apply_fit=True, apply_predict=False),
+        'spacial_smooth_predict': SpatialSmoothing( apply_fit=False, apply_predict=True),
+        'spacial_smooth_both': SpatialSmoothing( apply_fit=True, apply_predict=True),
+        'variance_min_train': TotalVarMin( apply_fit=True, apply_predict=False),
+        'variance_min_predict': TotalVarMin( apply_fit=False, apply_predict=True),
+        'variance_min_both': TotalVarMin( apply_fit=True, apply_predict=True),
+        'label_smooth_train':LabelSmoothing( apply_fit=True, apply_predict=False),
+        'label_smooth_predict': LabelSmoothing(apply_fit=False, apply_predict=True),
+        'label_smooth_both': LabelSmoothing(apply_fit=True, apply_predict=True),
+    }
+
     if not args.all:
-        main('exponential', 'exponential', args)
+        main('elu', 'elu', args)
     else:
-        for func in activation_functions:
-            main(func, func, args)
-        # proc_list = [None] * len(activation_functions)
-        # for ind, func in enumerate(activation_functions):
-        #     proc_list[ind] = multiprocessing.Process(target=main, args=(func, func, args))
-        #     proc_list[ind].start()
-        #
-        # for proc in proc_list:
-        #     proc.join()
-        #     print(f'{proc} is finished')
+        with open('simulation_log.txt','w') as log:
+            for func in activation_functions:
+                for test, preprocessor in preprocessors.items():
+                    try:
+                        main(func,test,args,preprocessor)
+                    except Exception as e:
+                        log.write(f'test running {func} with {test} failed due to:\n{str(e)}\n')
