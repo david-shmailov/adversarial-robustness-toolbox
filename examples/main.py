@@ -113,6 +113,7 @@ if __name__ == '__main__':
             for func in activation_functions:
                 for test, preprocessor in preprocessors.items():
                     try:
+                        print(f"________________function: {func}, preprocessor: {test}________________")
                         main(func,test,args,preprocessor)
                     except Exception as e:
                         log.write(f'test running {func} with {test} failed due to:\n{str(e)}\n')
