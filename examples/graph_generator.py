@@ -61,7 +61,7 @@ class GraphGenerator:
         plt.figure(figsize=(20, 14))
         funcs = self.files_counters_including_failed.keys()
         for func in funcs:
-            if 'relu' not in func:
+            if func != 'relu':
                 self.inquiries_higher_than_relu[func] = 0
                 for ind,count in enumerate(self.files_counters_including_failed[func]):
                     if count > self.files_counters_including_failed['relu'][ind]:
@@ -185,7 +185,7 @@ class GraphGenerator:
             file_counters = []
             file_counters_with_failure = []
             failure_count = 0
-            func = re.search(r'(\w+)_results_log\.txt', path).group(1).split('_')[0]
+            func = re.search(r'(\w+)_results_log\.txt', path).group(1)
             file.readline()  # skip the header
             line = file.readline()
             while line:

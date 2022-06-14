@@ -19,7 +19,7 @@ from os.path import exists
 import multiprocessing
 
 
-def main(func1, test, args, preprocessor=None):
+def main(func1, args, test='', preprocessor=None):
     epochs = int(args.epoch) if args.epoch else 5
     accuracy_before_attack = 0
     path_for_results = './results/'
@@ -92,7 +92,7 @@ if __name__ == '__main__':
         # 'sigmoid',
     ]
     preprocessors = {
-        'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
+        #'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
         'gaussian_predict':GaussianAugmentation(augmentation=False, apply_fit=False, apply_predict=True),
         'gaussian_both':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=True),
         'spacial_smooth_train':SpatialSmoothing( apply_fit=True, apply_predict=False),
