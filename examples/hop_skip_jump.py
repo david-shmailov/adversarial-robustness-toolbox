@@ -447,7 +447,10 @@ class HopSkipJump(EvasionAttack):
                 clip_max=clip_max,
             )
             # If attack failed. return original sample
-            np.nan_to_num(delta)
+            if delta == 0.0:
+                logger.debug("NaN detected in sample, returning original sample.")
+                self.pert_list.append("Attack Failed delta 0")
+                return original_sample
 
             # Then run binary search
             current_sample = self._binary_search(
@@ -593,14 +596,13 @@ class HopSkipJump(EvasionAttack):
         # implemented in the original source code of the authors
         if self.curr_iter == 0:
             return 0.1 * (clip_max - clip_min)
-
+        diff = original_sample - current_sample
         if self.norm == 2:
             dist = np.linalg.norm(original_sample - current_sample)
             delta = np.sqrt(np.prod(self.estimator.input_shape)) * self.theta * dist
         else:
             dist = np.max(abs(original_sample - current_sample))
             delta = np.prod(self.estimator.input_shape) * self.theta * dist
-
         return delta
 
     def _compute_update(
