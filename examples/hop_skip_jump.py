@@ -448,7 +448,9 @@ class HopSkipJump(EvasionAttack):
             )
             # If attack failed. return original sample
             if delta == 0.0:
-                logger.debug("NaN detected in sample, returning original sample.")
+                # Update current iteration
+                self.curr_iter += 1
+                logger.debug("delta is 0, returning original sample.")
                 self.pert_list.append("Attack Failed delta 0")
                 return original_sample
 
