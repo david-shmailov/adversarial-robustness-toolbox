@@ -446,6 +446,8 @@ class HopSkipJump(EvasionAttack):
                 clip_min=clip_min,
                 clip_max=clip_max,
             )
+            # If attack failed. return original sample
+            np.nan_to_num(delta)
 
             # Then run binary search
             current_sample = self._binary_search(
