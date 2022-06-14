@@ -107,13 +107,13 @@ if __name__ == '__main__':
     }
 
     if not args.all:
-        main('elu', 'elu', args)
+        main('elu', args)
     else:
         with open('simulation_log.txt','w') as log:
             for func in activation_functions:
                 for test, preprocessor in preprocessors.items():
                     try:
                         print(f"________________function: {func}, preprocessor: {test}________________")
-                        main(func,test,args,preprocessor)
+                        main(func,args,test=test,preprocessor=preprocessor)
                     except Exception as e:
                         log.write(f'test running {func} with {test} failed due to:\n{str(e)}\n')
