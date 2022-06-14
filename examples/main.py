@@ -92,6 +92,9 @@ if __name__ == '__main__':
         # 'sigmoid',
     ]
     preprocessors = {
+        #'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
+        'gaussian_predict':GaussianAugmentation(augmentation=False, apply_fit=False, apply_predict=True),
+        'gaussian_both':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=True),
         'spacial_smooth_train':SpatialSmoothing( apply_fit=True, apply_predict=False),
         'spacial_smooth_predict': SpatialSmoothing( apply_fit=False, apply_predict=True),
         'spacial_smooth_both': SpatialSmoothing( apply_fit=True, apply_predict=True),
@@ -101,9 +104,6 @@ if __name__ == '__main__':
         'label_smooth_train':LabelSmoothing( apply_fit=True, apply_predict=False),
         'label_smooth_predict': LabelSmoothing(apply_fit=False, apply_predict=True),
         'label_smooth_both': LabelSmoothing(apply_fit=True, apply_predict=True),
-        #'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
-        'gaussian_predict':GaussianAugmentation(augmentation=False, apply_fit=False, apply_predict=True),
-        'gaussian_both':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=True),
     }
 
     if not args.all:
