@@ -20,6 +20,7 @@ import multiprocessing
 
 
 def main(func1, args, test='', preprocessor=None):
+    print(f'{func1} {test} {preprocessor}')
     epochs = int(args.epoch) if args.epoch else 5
     accuracy_before_attack = 0
     path_for_results = './results/'
@@ -84,15 +85,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     activation_functions = [
+        'elu',
         'relu',
         # 'gelu',
-        'elu',
         # 'selu',
         # 'tanh',
         # 'sigmoid',
     ]
     preprocessors = {
-        #'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
+        'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
         'gaussian_predict':GaussianAugmentation(augmentation=False, apply_fit=False, apply_predict=True),
         'gaussian_both':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=True),
         'spacial_smooth_train':SpatialSmoothing( apply_fit=True, apply_predict=False),
@@ -114,6 +115,14 @@ if __name__ == '__main__':
                 for test, preprocessor in preprocessors.items():
                     try:
                         print(f"________________function: {func}, preprocessor: {test}________________")
-                        main(func,args,test=test,preprocessor=preprocessor)
+                        p = multiprocessing.Process(target=main, args=(func,args),kwargs={"test":test,"preprocessor":preprocessor})
+                        p.start()
+                        p.join(3600*6)
+                        if p.is_alive():
+                            p.kill()
+                            p.join()
+                            print(f"____________test {test} is deadlocked, killing _____________")
+                            log.write(f'test running {func} with {test} failed due to: DEADLOCK\n')
+                        #main(func,args,test=test,preprocessor=preprocessor)
                     except Exception as e:
                         log.write(f'test running {func} with {test} failed due to:\n{str(e)}\n')

@@ -12,19 +12,19 @@ from scipy.interpolate import interp1d, make_interp_spline
 size_of_data_set = 10000
 accuracies_after = {
     'relu': 0.8,
-    'sigmoid': 1.85,
-    'gelu': 10.25,
+    # 'sigmoid': 1.85,
+    # 'gelu': 10.25,
     'elu': 10.36,
-    'selu': 10.57,
-    'tanh': 10.43,
+    # 'selu': 10.57,
+    # 'tanh': 10.43,
 }
 accuracies_before = {
     'relu': 98.97,
-    'sigmoid': 96.94,
-    'gelu': 98.92,
+    # 'sigmoid': 96.94,
+    # 'gelu': 98.92,
     'elu': 98.74,
-    'selu': 98.43,
-    'tanh': 98.62,
+    # 'selu': 98.43,
+    # 'tanh': 98.62,
 }
 
 
@@ -58,7 +58,8 @@ class GraphGenerator:
 
     def percent_higher_than_relu(self):
         plt.rcParams.update({'font.size': 18})
-        plt.figure(figsize=(20, 14))
+
+        plt.figure(figsize=(self.horizontal_size , 14))
         funcs = self.files_counters_including_failed.keys()
         for func in funcs:
             if func != 'relu':
@@ -125,7 +126,7 @@ class GraphGenerator:
 
     def box_plot_perturbations(self):
         plt.rcParams.update({'font.size': 18})
-        plt.figure(figsize=(20, 7))
+        plt.figure(figsize=(self.horizontal_size, 7))
         plt.grid(visible=True, which='both')
         data = [norm for norm in self.files_data.values() if norm != 0]
         funcs = self.files_data.keys()
@@ -136,7 +137,7 @@ class GraphGenerator:
 
     def box_plot_for_inquiries(self):
         plt.rcParams.update({'font.size': 18})
-        plt.figure(figsize=(20, 7))
+        plt.figure(figsize=(self.horizontal_size, 7))
         plt.grid(visible=True, which='both')
         counters = self.files_counters.values()
         funcs = self.files_data.keys()
@@ -147,7 +148,7 @@ class GraphGenerator:
 
     def create_percentage_bar(self):
         plt.rcParams.update({'font.size': 18})
-        plt.figure(figsize=(20, 14))
+        plt.figure(figsize=(self.horizontal_size, 14))
         funcs = self.percentage_of_failures.keys()
         failed_percent = self.percentage_of_failures.values()
         # funcs = [func for func in funcs if func not in ['relu','sigmoid']]
@@ -158,10 +159,9 @@ class GraphGenerator:
         plt.title("Percentage of failed attacks")
         plt.show()
 
-    @staticmethod
-    def network_accuracy_bar():
+    def network_accuracy_bar(self):
         plt.rcParams.update({'font.size': 16})
-        plt.figure(figsize=(20, 14))
+        plt.figure(figsize=(self.horizontal_size, 14))
         X = accuracies_after.keys()
         before = accuracies_before.values()
         after = accuracies_after.values()
@@ -217,6 +217,8 @@ class GraphGenerator:
             self.files_data[func] = file_data
             self.files_data_including_failed[func] = file_data_with_failure
             self.percentage_of_failures[func] = (failure_count*100) / size_of_data_set
+            self.horizontal_size = 5*len(self.files_data.keys())
+
 
 
 if __name__ == "__main__":
