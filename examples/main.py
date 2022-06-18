@@ -20,7 +20,6 @@ import multiprocessing
 
 
 def main(func1, args, test='', preprocessor=None):
-    print(f'{func1} {test} {preprocessor}')
     epochs = int(args.epoch) if args.epoch else 5
     accuracy_before_attack = 0
     path_for_results = './results/'
@@ -47,6 +46,7 @@ def main(func1, args, test='', preprocessor=None):
     classifier = KerasClassifier(model=model, clip_values=(min_, max_), use_logits=False, preprocessing_defences=preprocessor)
     classifier.fit(x_train, y_train, nb_epochs=5, batch_size=128)
 
+    print(f"________________function: {func1}, preprocessor: {test}________________")
     # Evaluate the classifier on the test set
     preds = np.argmax(classifier.predict(x_test), axis=1)
     acc = np.sum(preds == np.argmax(y_test, axis=1)) / y_test.shape[0]
@@ -93,18 +93,18 @@ if __name__ == '__main__':
         # 'sigmoid',
     ]
     preprocessors = {
-        'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
-        'gaussian_predict':GaussianAugmentation(augmentation=False, apply_fit=False, apply_predict=True),
+        #'gaussian_train':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=False),
+        #'gaussian_predict':GaussianAugmentation(augmentation=False, apply_fit=False, apply_predict=True),
         'gaussian_both':GaussianAugmentation(augmentation=False, apply_fit=True, apply_predict=True),
-        'spacial_smooth_train':SpatialSmoothing( apply_fit=True, apply_predict=False),
-        'spacial_smooth_predict': SpatialSmoothing( apply_fit=False, apply_predict=True),
-        'spacial_smooth_both': SpatialSmoothing( apply_fit=True, apply_predict=True),
-        'variance_min_train': TotalVarMin( apply_fit=True, apply_predict=False),
-        'variance_min_predict': TotalVarMin( apply_fit=False, apply_predict=True),
-        'variance_min_both': TotalVarMin( apply_fit=True, apply_predict=True),
         'label_smooth_train':LabelSmoothing( apply_fit=True, apply_predict=False),
         'label_smooth_predict': LabelSmoothing(apply_fit=False, apply_predict=True),
         'label_smooth_both': LabelSmoothing(apply_fit=True, apply_predict=True),
+        #'spacial_smooth_train':SpatialSmoothing( apply_fit=True, apply_predict=False),
+        'spacial_smooth_both': SpatialSmoothing( apply_fit=True, apply_predict=True),
+        'spacial_smooth_predict': SpatialSmoothing( apply_fit=False, apply_predict=True),
+        'variance_min_train': TotalVarMin( apply_fit=True, apply_predict=False),
+        'variance_min_predict': TotalVarMin( apply_fit=False, apply_predict=True),
+        'variance_min_both': TotalVarMin( apply_fit=True, apply_predict=True),
     }
 
     if not args.all:
@@ -113,16 +113,19 @@ if __name__ == '__main__':
         with open('simulation_log.txt','w') as log:
             for func in activation_functions:
                 for test, preprocessor in preprocessors.items():
-                    try:
-                        print(f"________________function: {func}, preprocessor: {test}________________")
-                        p = multiprocessing.Process(target=main, args=(func,args),kwargs={"test":test,"preprocessor":preprocessor})
-                        p.start()
-                        p.join(3600*6)
-                        if p.is_alive():
-                            p.kill()
-                            p.join()
-                            print(f"____________test {test} is deadlocked, killing _____________")
-                            log.write(f'test running {func} with {test} failed due to: DEADLOCK\n')
-                        #main(func,args,test=test,preprocessor=preprocessor)
-                    except Exception as e:
-                        log.write(f'test running {func} with {test} failed due to:\n{str(e)}\n')
+                    for_relu = func=='relu' and test not in ['gaussian_both','variance_min_train','variance_min_predict','variance_min_both']
+                    for_elu = func=='elu'
+                    if for_relu or for_elu:
+                        try:
+                            print(f"________________function: {func}, preprocessor: {test}________________")
+                            # p = multiprocessing.Process(target=main, args=(func,args),kwargs={"test":test,"preprocessor":preprocessor})
+                            # p.start()
+                            # p.join(3600*6)
+                            # if p.is_alive():
+                            #     p.kill()
+                            #     p.join()
+                            #     print(f"____________test {test} is deadlocked, killing _____________")
+                            #     log.write(f'test running {func} with {test} failed due to: DEADLOCK\n')
+                            main(func,args,test=test,preprocessor=preprocessor)
+                        except Exception as e:
+                            log.write(f'test running {func} with {test} failed due to:\n{str(e)}\n')
