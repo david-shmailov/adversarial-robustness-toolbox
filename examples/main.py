@@ -112,7 +112,7 @@ if __name__ == '__main__':
     else:
         with open('simulation_log.txt','w') as log:
             for func in activation_functions:
-                for test, preprocessor in preprocessors.items()
+                for test, preprocessor in preprocessors.items():
                     try:
                         print(f"________________function: {func}, preprocessor: {test}________________")
                         main(func,args,test=test,preprocessor=preprocessor)
