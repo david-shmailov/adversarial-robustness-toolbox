@@ -47,13 +47,16 @@ class GraphGenerator:
             files = glob(self.args.i + "*_results_log.txt")
             for file in files:
                 self.read_results(file)
-        self.create_graphs_for_inquiries()
+        self.num_of_inq_per_sample()
         self.percent_higher_than_relu()
-        self.create_graphs()
+        self.perturbation_int_per_sample()
         self.box_plot_perturbations()
-        self.create_percentage_bar()
+        self.percentage_failed_attacks_bar()
         self.network_accuracy_bar()
         self.box_plot_for_inquiries()
+
+
+
 
 
     def percent_higher_than_relu(self):
@@ -77,7 +80,7 @@ class GraphGenerator:
         plt.title("Percentage of attacks that had higher inquiries compared to ReLU")
         plt.show()
 
-    def create_graphs_for_inquiries(self):
+    def num_of_inq_per_sample(self):
         plt.rcParams.update({'font.size': 22})
         plt.figure(figsize=(20, 7))
         for func, data in self.files_counters_including_failed.items():
@@ -101,7 +104,7 @@ class GraphGenerator:
         plt.show()
 
 
-    def create_graphs(self):
+    def perturbation_int_per_sample(self):
         plt.rcParams.update({'font.size': 22})
         plt.figure(figsize=(20, 7))
         for func, data in self.files_data_including_failed.items():
@@ -146,7 +149,7 @@ class GraphGenerator:
         plt.boxplot(counters,labels=funcs)
         plt.show()
 
-    def create_percentage_bar(self):
+    def percentage_failed_attacks_bar(self):
         plt.rcParams.update({'font.size': 18})
         plt.figure(figsize=(self.horizontal_size, 14))
         funcs = self.percentage_of_failures.keys()
@@ -155,7 +158,7 @@ class GraphGenerator:
         # failed_percent = [val for val in failed_percent if val > 0]
         plt.bar(funcs, failed_percent)
         plt.ylabel("Percentage")
-        plt.ylim(0,40)
+        plt.ylim(0,)
         plt.title("Percentage of failed attacks")
         plt.show()
 
